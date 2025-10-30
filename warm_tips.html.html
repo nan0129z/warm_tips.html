@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>温馨提示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            transition: all 0.3s ease;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .tip-window {
+            position: fixed;
+            width: 250px;
+            height: 80px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            cursor: pointer;
+            padding: 10px;
+            animation: fadeIn 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .counter {
+            color: white;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .settings {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .settings label {
+            display: block;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .settings input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💖 温馨提示生成器 💖</h1>
+        
+        <div class="control-panel">
+            <button class="btn" onclick="showSingleTip()">显示一个提示</button>
+            <button class="btn" onclick="showMultipleTips()">显示多个提示</button>
+            <button class="btn" onclick="clearAllTips()">清除所有提示</button>
+        </div>
+
+        <div class="settings">
+            <label>
+                提示数量: <input type="number" id="tipCount" value="10" min="1" max="50">
+            </label>
+            <label>
+                显示时间(秒): <input type="number" id="displayTime" value="5" min="1" max="30">
+            </label>
+        </div>
+
+        <div class="counter">
+            当前提示数: <span id="currentCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        // 背景颜色数组
+        const bgColors = [
+            '#FFB6C1', '#87CEEB', '#90EE90', '#E6E6FA',
+            '#FFFACD', '#DDA0DD', '#FF7F50', '#FFE4C4',
+            '#7FFFD4', '#FFE4E1', '#F0FFF0', '#FFF0F5',
+            '#FDF5E6', '#F0E68C', '#E0FFFF', '#F5F5DC'
+        ];
+
+        // 提示文字数组
+        const tips = [
+            '多喝水哦 💧', '保持微笑 😊', '每天都要元气满满 🌟',
+            '记得吃水果 🍎', '保持好心情 😄', '好好爱自己 💝',
+            '我想你了 💕', '梦想成真 ✨', '期待下一次见面 🤗',
+            '金榜题名 🎓', '顺顺利利 🍀', '早点休息 🌙',
+            '愿所有烦恼都消失 🌈', '别熬夜 ⏰', '今天过得开心嘛 😊',
+            '天冷了，多穿衣服 🧥', '你是最棒的 👍', '加油 💪',
+            '一切都会好起来的 🌈', '相信自己 💫'
+        ];
+
+        let activeTips = 0;
+
+        // 显示单个提示
+        function showSingleTip() {
+            createTipWindow();
+        }
+
+        // 显示多个提示
+        function showMultipleTips() {
+            const count = parseInt(document.getElementById('tipCount').value) || 10;
+            const displayTime = parseInt(document.getElementById('displayTime').value) || 5;
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    createTipWindow(displayTime * 1000);
+                }, i * 200); // 延迟创建，避免同时弹出
+            }
+        }
+
+        // 创建提示窗口
+        function createTipWindow(autoCloseTime = 0) {
+            const tip = getRandomTip();
+            const bgColor = getRandomColor();
+            
+            // 创建窗口元素
+            const tipWindow = document.createElement('div');
+            tipWindow.className = 'tip-window';
+            tipWindow.textContent = tip;
+            tipWindow.style.backgroundColor = bgColor;
+            tipWindow.style.color = getTextColor(bgColor);
+            
+            // 随机位置（确保在屏幕内）
+            const maxX = window.innerWidth - 250;
+            const maxY = window.innerHeight - 80;
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            
+            tipWindow.style.left = x + 'px';
+            tipWindow.style.top = y + 'px';
+            
+            // 点击关闭
+            tipWindow.onclick = function() {
+                this.remove();
+                updateCounter(-1);
+            };
+            
+            document.body.appendChild(tipWindow);
+            updateCounter(1);
+            
+            // 自动关闭
+            if (autoCloseTime > 0) {
+                setTimeout(() => {
+                    if (tipWindow.parentNode) {
+                        tipWindow.remove();
+                        updateCounter(-1);
+                    }
+                }, autoCloseTime);
+            }
+            
+            // 添加拖拽功能
+            makeDraggable(tipWindow);
+        }
+
+        // 获取随机提示
+        function getRandomTip() {
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+
+        // 获取随机颜色
+        function getRandomColor() {
+            return bgColors[Math.floor(Math.random() * bgColors.length)];
+        }
+
+        // 根据背景色确定文字颜色
+        function getTextColor(bgColor) {
+            const hex = bgColor.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#000000' : '#FFFFFF';
+        }
+
+        // 更新计数器
+        function updateCounter(change) {
+            activeTips += change;
+            document.getElementById('currentCount').textContent = activeTips;
+        }
+
+        // 清除所有提示
+        function clearAllTips() {
+            document.querySelectorAll('.tip-window').forEach(tip => tip.remove());
+            activeTips = 0;
+            updateCounter(0);
+        }
+
+        // 使窗口可拖拽
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            element.onmousedown = dragMouseDown;
+            
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+            
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+            
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // 触摸设备支持
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.classList.contains('tip-window')) {
+                makeDraggable(e.target);
+            }
+        });
+
+        // 防止拖拽时选中文本
+        document.addEventListener('dragstart', function(e) {
+            if (e.target.classList.contains('tip-window')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
